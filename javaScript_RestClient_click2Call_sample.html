@@ -1,0 +1,141 @@
+<html>
+<head>
+<script>
+var authRq = new XMLHttpRequest();
+var sessionRq = new XMLHttpRequest();
+var telephonyRq = new XMLHttpRequest();
+var sessionCloseRq = new XMLHttpRequest();
+var serverUrl;
+
+function doAuthent(serverIP, username, password) {
+
+		serverUrl = "http://"+serverIP+":80/api/rest/"; 		
+
+		 authRq.onreadystatechange = function() {
+		  if (this.readyState === XMLHttpRequest.DONE) {
+			 document.getElementById("resultAuthent").innerHTML = "returns " + this.status; 
+			 if (this.status === 200) {
+				document.getElementById("clickStartSession").style.visibility = "visible";
+				document.getElementById("resultSession").innerHTML = ""; 
+			}
+		  }
+        };
+
+		
+		authRq.open("GET", serverUrl + "authenticate?version=1.0", true, username, password);
+        authRq.withCredentials = true;
+		authRq.send();		
+}
+
+function startSession() {
+	var appliNameParams = {"applicationName":"myTestProgram"};
+
+    sessionRq.onreadystatechange = function() {
+	  if (this.readyState === XMLHttpRequest.DONE) {
+		 document.getElementById("resultSession").innerHTML = "returns " + this.status;
+		 if (this.status === 200) {
+			document.getElementById("clickMakeCall").style.visibility = "visible";
+			document.getElementById("resultmakeCall").innerHTML = ""; 
+			document.getElementById("clickCloseSession").style.visibility = "visible";
+		 } else if (this.status === 403) {
+			document.getElementById("clickCloseSession").style.visibility = "visible";
+		 }
+	  }
+	}
+
+	sessionRq.open("POST", serverUrl + "1.0/sessions");
+	sessionRq.withCredentials = true;
+	sessionRq.setRequestHeader('Content-Type', "application/json"); 
+	sessionRq.setRequestHeader('Accept', "*/*"); 
+	sessionRq.send(JSON.stringify(appliNameParams));
+}
+
+function makeCall(calling, called) {
+	var makeCallReqParams = {
+		   "deviceId": calling,
+		   "callee": called,
+		   "autoAnswer": true
+	}
+
+   telephonyRq.onreadystatechange = function() {
+	  if (this.readyState === XMLHttpRequest.DONE) {
+		 document.getElementById("resultmakeCall").innerHTML = "returns " + this.status; 
+	  }
+	}
+
+	telephonyRq.open("POST", serverUrl + "1.0/telephony/calls");
+	telephonyRq.withCredentials = true;
+	telephonyRq.setRequestHeader('Content-Type', "application/json"); 
+	telephonyRq.setRequestHeader('Accept', "*/*"); 
+	telephonyRq.send(JSON.stringify(makeCallReqParams));
+}
+
+function closeSession() {
+    sessionCloseRq.onreadystatechange = function() {
+	  if (this.readyState === XMLHttpRequest.DONE) {
+		 document.getElementById("resultCloseSession").innerHTML = "returns " + this.status; 
+		 document.getElementById("clickStartSession").style.visibility = "hidden";
+		 document.getElementById("clickCloseSession").style.visibility = "hidden";
+		 document.getElementById("clickMakeCall").style.visibility = "hidden";
+		 document.getElementById("resultAuthent").innerHTML = ""; 
+	  }
+	}
+	sessionCloseRq.open("DELETE", serverUrl + "1.0/sessions");
+	sessionCloseRq.withCredentials = true;
+	sessionCloseRq.send();
+}
+
+
+
+</script>
+</head>
+<body>
+<h2> This is an example of click-to-call</h2>
+<ul>
+<li> preliminary, enter the server address, the user login, its password, its calling device, the destination number </li>
+<li> 1°) click to authenticate the user </li>
+<li> 2°) if ok (res=200), click to start the session (thanks to the returned cookie) </li>
+<li> 3°) if ok (res=200), make the call (should return 201)</li>
+</ul>
+
+<p> Enter Server address, Username, Password, calling device number and called number  </p>
+<FORM>
+    <P>
+    <LABEL for="serverIP">Server address </LABEL>
+              <INPUT type="text" id="ServerIP" value = "roxe-inst-1.bstlabrd.fr.alcatel-lucent.com"> <BR>
+    <LABEL for="username">User name </LABEL>
+              <INPUT type="text" id="Username" value = "oxe70121">  <BR>
+    <LABEL for="password">User password </LABEL>
+              <INPUT type="password" id="Password" value = "0000"><BR>
+    <LABEL for="calling">Calling device number </LABEL>
+              <INPUT type="text" id="Calling" value = "70121"><BR>
+    <LABEL for="called">Called </LABEL>
+              <INPUT type="text" id="Called" value = "70120"><BR>
+    
+    </P>
+ </FORM>
+ 
+ <button  onclick="doAuthent(document.getElementById('ServerIP').value, document.getElementById('Username').value, document.getElementById('Password').value)">Authenticate
+ <div id="resultAuthent"> </div>
+ </button> 
+ 
+ <div id="clickStartSession"  style="visibility:hidden;">
+ <button  onclick="startSession()">Start Session
+ <div id="resultSession"> </div>
+ </button>
+ </div>
+ 
+ <div id="clickMakeCall" style="visibility:hidden;">
+ <button  onclick="makeCall(document.getElementById('Calling').value, document.getElementById('Called').value)">Make Call
+ <div id="resultmakeCall"> </div>
+ </button> 
+ </div>
+ 
+ <div id="clickCloseSession" style="visibility:hidden;">
+ <button  onclick="closeSession()">Close Session
+<div id="resultCloseSession"> </div>
+ </button> 
+ </div>
+ 
+</body>
+</html> 
